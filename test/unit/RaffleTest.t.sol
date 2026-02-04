@@ -8,14 +8,12 @@ import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-
 contract RaffleTest is Test {
     Raffle private raffle;
     HelperConfig private helperConfig;
 
     event RaffleEnter(address indexed player);
     event WinnerPicked(address indexed winner);
-
 
     address private fake_player = makeAddr("player");
     uint256 private constant STARTING_PLAYER_BALANCE = 10 ether;
@@ -40,8 +38,7 @@ contract RaffleTest is Test {
         subId = config.subId;
         callbackGasLimit = config.callbackGasLimit;
         vm.deal(fake_player, STARTING_PLAYER_BALANCE);
-        
-}
+    }
 
     function testRaffleInitiallyOpen() external view {
         Raffle.RaffleState raffleState = raffle.getRaffleState();
@@ -71,25 +68,22 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: ENTRANCE_FEE}();
     }
 
-    function testNoEntryWhileRaffleCalculating() external{
+    function testNoEntryWhileRaffleCalculating() external {
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
         // Simulate the raffle being in a calculating state
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
         raffle.performUpkeep("");
-
-        
 
         vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        
     }
 
     function testCheckUpkeepReturnsFalseNoPlayer() external {
         // Simulate the raffle being in a calculating state
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
         (bool upkeep,) = raffle.checkUpkeep("");
         assert(!upkeep);
@@ -105,7 +99,7 @@ contract RaffleTest is Test {
     function testCheckUpkeepReturnsFalseRaffleNotOpen() external {
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
         raffle.performUpkeep("");
         (bool upkeep,) = raffle.checkUpkeep("");
@@ -115,55 +109,58 @@ contract RaffleTest is Test {
     function testCheckUpkeepReturnsTrue() external {
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
         (bool upkeep,) = raffle.checkUpkeep("");
         assert(upkeep);
     }
 
-    //ADD MORE TESTS 
+    //ADD MORE TESTS
 
     function testPerformUpkeepRunsOnlyIfCheckUpkeepTrue() external {
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
 
-       
-        raffle.performUpkeep(""); 
+        raffle.performUpkeep("");
     }
 
     function testPerformUpkeepRevertsIfCheckUpkeepFalse() external {
         uint256 numPlayers = 0;
         Raffle.RaffleState rState = raffle.getRaffleState();
-        
+
         vm.expectRevert(
-            abi.encodeWithSelector(Raffle.Raffle__UpKeepNotTrueYet.selector, rState, numPlayers,block.timestamp - raffle.getLastTimeStamp())
+            abi.encodeWithSelector(
+                Raffle.Raffle__UpKeepNotTrueYet.selector,
+                rState,
+                numPlayers,
+                block.timestamp - raffle.getLastTimeStamp()
+            )
         );
         raffle.performUpkeep("");
-   
     }
 
     // DO THIS SHIT LATER
 
     function testPerformUpkeepUpdatesRaffleStateAndEmitsWinnerPicked() external {
-      vm.prank(fake_player);        raffle.enterRaffle{value: ENTRANCE_FEE}();
+        vm.prank(fake_player);
+        raffle.enterRaffle{value: ENTRANCE_FEE}();
         vm.warp(block.timestamp + cycleDuration + 1);
-         vm.roll(block.number + 1);
+        vm.roll(block.number + 1);
 
-      // Act
+        // Act
         vm.recordLogs();
-         raffle.performUpkeep(""); // emits requestId
-         Vm.Log[] memory entries = vm.getRecordedLogs();
+        raffle.performUpkeep(""); // emits requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
         bytes32 requestId = entries[1].topics[1];
 
         // Assert
         Raffle.RaffleState raffleState = raffle.getRaffleState();
         // requestId = raffle.getLastRequestId();
-                assert(uint256(requestId) > 0);
+        assert(uint256(requestId) > 0);
         assert(uint256(raffleState) == 1);
-         }
-
+    }
 
     //Fuzz tests
     // function testFulfilRandomWordsRunAfterPerformUpkeep () external {
@@ -174,37 +171,33 @@ contract RaffleTest is Test {
     //     vm.expectRevert();
     //     VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(0, address(raffle));
 
-
     // }
-
 
     modifier skipForkTests() {
         if (block.chainid != 31337) {
-            return ; // Skip the test if not on a local fork
+            return; // Skip the test if not on a local fork
         }
         _;
     }
 
     //-. stateless fuzz test for the above test
-    function testFulfilRandomWordsRunAfterPerformUpkeepStateless (uint256 requestId) external skipForkTests{
+    function testFulfilRandomWordsRunAfterPerformUpkeepStateless(uint256 requestId) external skipForkTests {
         // Skip requestId = 1 (which is what the real test uses)
-    vm.assume(requestId != 1);  
-        
+        vm.assume(requestId != 1);
+
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
         vm.expectRevert();
         VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(requestId, address(raffle));
     }
 
-
-    function testFulfillRandomWordsPicksWinnerResetsArrayAndSendsMoney() external skipForkTests{
+    function testFulfillRandomWordsPicksWinnerResetsArrayAndSendsMoney() external skipForkTests {
         vm.prank(fake_player);
         raffle.enterRaffle{value: ENTRANCE_FEE}();
-        vm.warp(block.timestamp + cycleDuration +1);
+        vm.warp(block.timestamp + cycleDuration + 1);
         vm.roll(block.number + 1);
-        
 
         // Arrange
         uint256 additionalEntrances = 3;
@@ -219,7 +212,7 @@ contract RaffleTest is Test {
 
         uint256 startingTimeStamp = raffle.getLastTimeStamp();
         uint256 startingBalance = expectedWinner.balance;
-        
+
         // Act
         vm.recordLogs();
         raffle.performUpkeep(""); // emits requestId
@@ -241,7 +234,4 @@ contract RaffleTest is Test {
         assert(winnerBalance == startingBalance + prize);
         assert(endingTimeStamp > startingTimeStamp);
     }
-
-
-
 }

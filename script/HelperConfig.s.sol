@@ -33,8 +33,6 @@ contract HelperConfig is Script, CodeConstants {
         networkConfigMapping[11155111] = getSepoliaEthConfig();
     }
 
-    
-
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
         if (networkConfigMapping[chainId].vrfCoordinator != address(0)) {
             return networkConfigMapping[chainId];
@@ -60,17 +58,16 @@ contract HelperConfig is Script, CodeConstants {
             cycleDuration: 60,
             link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
             account: 0x5B6732937877542BD82363385f0D57A8D46461e6 //acc1
-            
         });
     }
 
     function setSubId(uint64 newSubId) external {
-    if (block.chainid == 31337) {
-        localNetworkConfig.subId = newSubId;
-    } else {
-        networkConfigMapping[block.chainid].subId = newSubId;
+        if (block.chainid == 31337) {
+            localNetworkConfig.subId = newSubId;
+        } else {
+            networkConfigMapping[block.chainid].subId = newSubId;
+        }
     }
-}
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         if (localNetworkConfig.vrfCoordinator != address(0)) {

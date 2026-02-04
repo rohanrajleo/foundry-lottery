@@ -28,14 +28,13 @@ pragma solidity ^0.8.19;
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
-
 /**
  * @title Raffle contract
  * @author rohan
  * @notice This contract is a basic implementation of a raffle system.
  * @dev The contract implements Chainlink VRFv2.5 for secure random number generation.
  */
-contract Raffle is  VRFConsumerBaseV2 {
+contract Raffle is VRFConsumerBaseV2 {
     //errors
     error Raffle__NotEnoughEthEntered();
     error Raffle__UpKeepNotTrueYet(uint256 raffleState, uint256 playerCount, uint256 timePassed);
@@ -129,20 +128,20 @@ contract Raffle is  VRFConsumerBaseV2 {
         s_raffleState = RaffleState.CALCULATING; //enough time has passed, raffle is calculating winner
 
         /*uint256 reqId = */
-     uint256 requestId=  VRFCoordinatorV2Interface(i_vrfCoordinator).requestRandomWords(
-    i_gasLaneKeyHash,
-    uint64(i_subId),
-    3, // requestConfirmations
-    i_callbackGasLimit,
-    1 // numWords
-);
+        uint256 requestId = VRFCoordinatorV2Interface(i_vrfCoordinator).requestRandomWords(
+            i_gasLaneKeyHash,
+            uint64(i_subId),
+            3, // requestConfirmations
+            i_callbackGasLimit,
+            1 // numWords
+        );
 
-emit RequestedRaffleWinner(requestId);
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(uint256, /*requestId*/ uint256[] memory randomWords) internal override {
-         if (s_playerArray.length == 0) return; // Guard against empty array
-        
+        if (s_playerArray.length == 0) return; // Guard against empty array
+
         uint256 winnerIndex = randomWords[0] % s_playerArray.length;
         address payable winner = s_playerArray[winnerIndex];
 

@@ -1,5 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
+
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {Test, console} from "forge-std/Test.sol";
@@ -18,23 +19,15 @@ contract DeployRaffle is Script {
         if (netConfig.subId == 0) {
             //create a subscription if it doesn't exist
             CreateSubscription createSub = new CreateSubscription();
-            (netConfig.subId, netConfig.vrfCoordinator) = createSub
-                .createSubscription(
-                    netConfig.vrfCoordinator,
-                    netConfig.account
-                );
+            (netConfig.subId, netConfig.vrfCoordinator) =
+                createSub.createSubscription(netConfig.vrfCoordinator, netConfig.account);
 
             // UPDATE: Store the new subId in HelperConfig
             //helperconfig.setSubId(netConfig.subId); --> u do not need to do this, it is already done
 
             // fund it
             FundSubscription fundSub = new FundSubscription();
-            fundSub.fundSubscription(
-                netConfig.vrfCoordinator,
-                netConfig.subId,
-                netConfig.link,
-                netConfig.account
-            );
+            fundSub.fundSubscription(netConfig.vrfCoordinator, netConfig.subId, netConfig.link, netConfig.account);
         }
 
         vm.startBroadcast(netConfig.account);
@@ -49,12 +42,7 @@ contract DeployRaffle is Script {
         vm.stopBroadcast();
 
         AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(
-            address(raffle),
-            netConfig.vrfCoordinator,
-            netConfig.subId,
-            netConfig.account
-        );
+        addConsumer.addConsumer(address(raffle), netConfig.vrfCoordinator, netConfig.subId, netConfig.account);
 
         //temp
         console.log("chain id:", block.chainid);
